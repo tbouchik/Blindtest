@@ -1,0 +1,47 @@
+body {
+	margin-top:30px;
+    font: 14px "Lucida Grande", Helvetica, Arial, sans-serif;
+    background-image: url(./image2.JPG);
+    background-repeat:no-repeat;
+    background-size: cover;
+    
+}
+
+section{
+	background-color: rgba(159, 185, 182, 0.9);
+	margin: 20px 20px 20px 20px;
+	padding: 10px 10px 10px 10px;
+	border-radius: 5px;
+}
+
+#chat{
+	background-color: rgb(202, 211, 200);
+	margin: 5px 2px 0px 2px;
+	height: 30%;
+	padding: 20px 20px 20px 20px;
+	border-radius: 25px;
+}
+
+.leftSide{
+	float: left;
+	background-color: none;
+	margin-right: 0px;
+	left:25px;
+	width:30%;
+}
+
+.rightSide{
+	float: right;
+	background-color: none;
+	margin-left: 0px;
+	right:25px;
+	width:60%;
+}
+
+
+.box{
+	background-color: rgb(93, 108, 111);
+	margin: 10px 5px 10px 5px;
+	padding: 10px 10px 10px 10px;
+	border-radius: 5px;
+}

@@ -1,0 +1,59 @@
+<html>
+<head>
+  <title>chatapp</title>
+  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/css/bootstrap.min.css">
+  <script src="http://code.jquery.com/jquery-latest.min.js"></script>
+  <script src="/socket.io/socket.io.js"></script>
+  <style>
+    body{
+      margin-top:30px;
+    }
+    #messageArea{
+      display:none;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="container">
+
+    <div class="row">
+      <div class="col-md-4">
+        <div class="well">
+          <h3> Online Users </h3>
+          <p>Afficher la liste des utilisateurs connectés</p>
+          <button type="submit" id="get">actualiser et afficher</button>
+          <br>
+          <ul class="list-group" id="users"></ul>
+        </div>
+      </div>
+    </div>
+
+    <p><input type="button" value="déconnexion" id="disconnection"></p>
+  </div>
+
+  <script>
+      $(function(){
+          var socket = io.connect();
+          var $users = $('#users');
+
+          socket.on('get users', function(data){
+              var html = '';
+              for(i=0 ; i<data.length; i++){
+                  html +='<li class"list-group-item">'+data[i]+ '</li>';
+              }
+              $users.html(html);
+          });
+
+
+          $('#disconnection').click(function(){
+              socket.emit('disconnect_event', 'il se passe quelque chose');
+              socket.on('disconnected', function () {
+                  document.location.href="loggin.html";
+              });
+          };
+      });
+  </script>
+
+</body>
+</html>

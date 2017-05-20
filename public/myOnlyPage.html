@@ -1,0 +1,358 @@
+<html>
+  <head>
+      <title>Application</title>
+      <link rel="stylesheet" href="stylesheets/style.css">
+      <script src="http://code.jquery.com/jquery-latest.min.js"></script>
+      <script src="/socket.io/socket.io.js"></script>
+  </head>
+
+  <body>
+    <section id="logginArea">
+        <form id="loggin">
+              <div>
+                <label for="logUser">Déjà inscrit ? Connectez-vous !</label>
+                <input id="logUser" placeholder=" Username" type="text" />
+                <button type="submit">Log In</button>
+              </div>
+        </form>
+          <div id="loggup_link">
+            <label>Non encore inscrit ?<br></label>
+            <button type="submit" id="loggupLink">Inscrivez-vous !</button>
+          </div>
+    </section>
+
+    <section id="loggupArea">
+      <form id="loggup">
+          <div class="well">
+            <label for="newUsername">Inscrivez-vous !</label>
+            <input id="newUsername" placeholder=" Username" />
+            <button type="submit">Log Up</button>
+          </div>
+      </form>
+    </section>
+      
+
+    <div id="mainArea">
+
+        <section class="leftSide">
+
+          <div class="box">
+            <label>Online Users</label><br>
+            <ul id="usersConnectedList">
+            </ul>
+          </div>
+
+          <div class="box">
+            <label>CHAT :</label>
+            <br><br>
+            <div id="chat" style="overflow: scroll">
+            </div>
+            <br><br/>
+            <center>
+              <form id="messageForm">
+                  <!--<label for="monMessage">Votre message : </label>-->
+                  <br>
+                  <input id="monMessage" type="text" placeholder="Votre message..." size="20">
+                  <!--<textarea id="monMessage" placeholder=" Votre message..." style="width: 85%;"></textarea>-->
+                  <br/>
+                  <button type="submit">Envoyer</button>
+              </form>
+            </center>
+          </div>
+          <form >
+            <button type="submit" id="disconnexionButton" style="text-align: center;">Déconnexion</button>
+          </form>
+        </section>
+
+        <section class="rightSide">
+          <div class="box">
+            <div id="startInterface">
+              <button id ="start" >start</button>
+            </div>
+            <div id="blindtestInterface">
+              <!--<div id="artist-music"></div>-->
+              <div id='affichageScores'>
+                Scores : <br><br>
+              </div>
+              <br>
+              <div id="affichagePropositions">
+                <label>Press on the right music title !</label>
+                <br/>
+                <br/>
+                <ul id="choix">
+                  <li><button type="submit" class="btn btn-primary" value="Music1">Blues Brothers - GreeOnions.mp3</button></li>
+                  <li><button type="submit" class="btn btn-primary"  value="Music3" >Sia - Chandelier .mp3</button></li>
+                  <li><button type="submit" class="btn btn-primary"  value="Music2" >Bob Marley - A lalala long.mp3</button></li>
+                  <li><button type="submit" class="btn btn-primary"  value="Music3" >Booba - DKR .mp3</button></li>
+                  <li><button type="submit" class="btn btn-primary"  value="Music4" >Dire Straits - Sultans of Swing.mp3</button></li>
+                  <li><button type="submit" class="btn btn-primary"  value="Music3" >Céline Dion - I'm Alive.mp3</button></li>
+                  <li><button type="submit" class="btn btn-primary"  value="Music3" >Stromae - ave cesaria.mp3</button></li>
+                  <li><button type="submit" class="btn btn-primary"  value="Music3" >Gluck - Orfeo ed Euridice - Dance of the Blessed Spirits.mp3</button></li>
+                  <li><button type="submit" class="btn btn-primary"  value="Music6" >Ray Charles - Hallelujah I love her so.mp3</button></li>
+                  <li><button type="submit" class="btn btn-primary"  value="Music5" >Drake- One Dance.mp3</button></li>
+                  <li><button type="submit" class="btn btn-primary"  value="Music5" >Francky Vincent - Fruit de la passion.mp3</button></li>
+                </ul>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <ul id="playlist">
+              <li id="1" class="shot" song="Blues Brothers - Green Onions.mp3"  artist="Blues Brothers"></li>
+              <li id="2" class="shot" song="Dire Straits - Sultans of Swing.mp3"  artist="Dire Straits"></li>
+              <li id="3" class="shot" song="Drake- One Dance.mp3"  artist="Drake"></li>
+              <li id="4" class="shot" song="Booba - DKR .mp3"  artist="Booba"></li>
+              <li id="5" class="shot" song="Francky Vincent - Fruit de la passion.mp3"  artist="Francky Vincent"></li>
+              <li id="6" class="shot" song="Ray Charles - Hallelujah I love her so.mp3"  artist="Ray Charles"></li>
+              <li id="7" class="shot" song="Stromae - ave cesaria.mp3"  artist="Stromae"></li>
+              <li id="8" class="shot" song="Gluck - Orfeo ed Euridice - Dance of the Blessed Spirits.mp3"  artist="Gluck"></li>
+              <li id="9" class="shot" song="Céline Dion - I'm Alive.mp3"  artist="Céline Dion - I'm Alive.mp3"></li>
+              <li id="10" class="shot" song="Sia - Chandelier .mp3"  artist="Sia"></li>
+              <li id="11" class="shot" song="Bob Marley - A lalala long.mp3"  artist="Bob Marley"></li>
+              <li id="12" class="shot" song="Francky Vincent - Fruit de la passion.mp3"  artist="Francky Vincent"></li>
+            </ul>
+    </div>
+
+
+
+    <script>
+        $(function(){
+            //connexion à sockte.io
+            var socket = io.connect();
+
+            //affichage de l'espace de loggin au chargement de la page
+            $(document).ready(function () {
+              affichage("#logginArea");
+              document.getElementById("logUser").focus();
+            });
+
+            /**
+             * PARTIE LOGGIN ET DECONNEXION
+             */
+                //demande de loggin
+                $('#loggin').submit(function(e){
+                    e.preventDefault();
+                    var logUsername = $('#logUser').val();
+                    socket.emit('logUser', logUsername, affichage);
+                    //succès de la connexion
+                    socket.on('connectionSuccess', function(data){
+                        affichage("#mainArea");
+                        $("#blindtestInterface").hide();
+                        write_users(data);
+                        document.getElementById("monMessage").focus();
+                    });
+                    //gestion des erreurs de loggin
+                    socket.on('wrongUser', function(message) {
+                        alert(message);
+                        document.getElementById("logUser").value="";
+                        document.getElementById("logUser").focus();
+                    });
+                    socket.on('userAlreadyConnected', function(message) {
+                        alert(message);
+                        document.getElementById("logUser").value="";
+                        document.getElementById("logUser").focus();
+                    });
+                    socket.on('toManyUsersConnected', function (message) {
+                      alert(message);
+                    })
+                });
+
+                //actualisation de la nouvelle connexion pour es autres usagés
+
+                //socket.on('newConnection', function(newUserConnected, allUsersConnected){
+                //  write_users(allUsersConnected);
+                //  $('#chat').append("<p><i>"+newUserConnected+" a rejoint la conversation</i></p>");
+                //});
+
+                //socket.on('newDisconnexion', function(newUserConnected, allUsersConnected){
+                //  write_users(allUsersConnected);
+                //  $('#chat').append("<p><i>"+newUserConnected+" a quitté la conversation</i></p>");
+                //});
+
+                //déconnexion manuelle
+                $('#disconnexionButton').click(function(){
+                    socket.emit('disconnect');
+                });
+                
+            /**
+             * LOGGUP LINK
+             */
+
+                $('#loggupLink').click(function (e) {
+                  e.preventDefault();
+                  affichage('#loggupArea');
+                  document.getElementById("newUsername").focus();
+                });
+
+            /**
+             * PARTIE LOGGUP
+             */
+                //envoi du userName
+                $('#loggup').submit(function(e){
+                    e.preventDefault();
+                    var newUsername = $('#newUsername').val();
+                    socket.emit('createUsername', newUsername);
+                    socket.on('usernameCreated', function (message, username) {
+                      alert(message+username);
+                      affichage('#logginArea');
+                      document.getElementById("logUser").focus();
+                    });
+                    //récéption de la réponse à l'envoi du username
+                    socket.on('usernameAlreadyUsed', function(message) {
+                        alert(message);
+                        document.getElementById("newUsername").value = "";
+                        document.getElementById("newUsername").focus();
+                    });
+                });
+
+                
+            /**
+             * PARTIE CHAT
+             */
+                $('#messageForm').submit(function(e){
+                  e.preventDefault();
+                  socket.emit('sendMessage', $('#monMessage').val());
+                  document.getElementById("monMessage").value = "";
+                });
+
+                socket.on('newUserMessage', function(message, username){
+                  $('#chat').append("<div class='well'><strong>"+username+"</strong> : "+message+"</div>");
+                });
+
+                socket.on('newSystemMessage', function (message, usersList) {
+                  write_users(usersList);
+                  $('#chat').append("<p><i>"+message+"</i></p>");
+                })
+
+
+            /**
+             * PARTIE BLIND TEST
+             */
+
+                //La gestion du blindtest
+                var audio;
+                var playlist_js = document.getElementById('playlist');
+                var min =1;
+                var max =9;
+                //variables globales
+                var song, artist;
+
+                //Le bouton Play qui lance le combat
+                $('#start').on('click',function(){
+                  socket.emit('blindtestStart');
+                  console.log('le jeu commence');
+                });
+                
+                socket.on('music go',function(num, players){
+                    //gestion de l'affichage des scores
+                    $('#startInterface').hide();
+                    $('#blindtestInterface').show();
+                    $('#playlist').hide();
+                    for (var i = 0; i < players.length; i++) {
+                      $("#affichageScores").append("<a id='username"+i+"'></a> : <a id='score"+i+"'></a><br>\n");
+                      document.getElementById("username"+i).innerHTML=players[i];
+                      document.getElementById("score"+i).innerHTML="0";
+                    }
+
+                    console.log('ca doit jouer normalement...');
+                    initAudio($("#"+num));
+                    audio.play();
+                });
+
+                
+                socket.on('stop', function(scores){
+                    // audio.pause();
+                    console.log('pause')
+                    audio.pause();
+                    setTimeout(function(){
+                      var next = $('#playlist li.active').next();
+                      console.log('next' + next);
+                      initAudio(next);
+                       audio.play();
+                     }, 3500);
+
+                    //update de l'affichage des scores
+                    console.log(scores)
+                    for (var i = 0; i < scores.length; i++) {
+                      document.getElementById("score"+i).innerHTML=String(scores[i]);
+                    }
+                });
+
+                $('.btn-primary').on('click',function(){
+                    if(this.innerHTML === song){
+                      socket.emit('serveur update les scores svp', song, artist);
+                    }
+                });
+
+                socket.on('Vous avez perdu',function(scores, winner){
+                  audio.pause();
+                  alert('Vous avez perdu contre '+ winner +'. Dommage!');
+                  $("#affichageScores").html("");
+                  $('#blindtestInterface').hide();
+                  $('#startInterface').show();
+                  for (var i = 0; i < scores.length; i++) {
+                      document.getElementById("score"+i).innerHTML=String(scores[i]);
+                  }
+                });
+
+                socket.on('Vous avez gagné', function(scores){
+                  audio.pause();
+                  alert('Félicitations, Vous êtes le grand vainqueur cette partie');
+                  $("#affichageScores").html("");
+                  $('#blindtestInterface').hide();
+                  $('#startInterface').show();
+                  //for (var i = 0; i < scores.length; i++) {
+                    //document.getElementById("score"+i).innerHTML=String(scores[i]);
+                  //}
+                });
+
+            /**
+             * FONCTIONS GLOBALES
+             */
+                function affichage(maPage){
+                    idList=['#logginArea', '#loggupArea', '#mainArea', '#playlist'];
+                    for (var i = idList.length - 1; i >= 0; i--) {
+                      if (idList[i] != maPage) {
+                          $(idList[i]).hide();
+                      }
+                      else {
+                          $(idList[i]).show();
+                      }
+                    }
+                };
+
+                function write_users (usersList) {
+                  var text = '';
+                  for(i=0 ; i<usersList.length; i++){
+                    text +='<li>'+usersList[i]+ '</li>';
+                  }
+                  document.getElementById("usersConnectedList" ).innerHTML=text;
+                };
+
+                function getRandomInt(min, max){
+                    min =Math.ceil(min);
+                    max =Math.floor(max);
+                    return Math.floor(Math.random()*(max-min)) +min;
+                };
+
+
+                function initAudio(element){
+                    song = element.attr('song');
+                    artist = element.attr('artist');
+
+                    //Creation de l'objet audio qui joue la musique
+                    audio = new Audio( "./musics/"+song);
+                    console.log(' audio playing , ./musics/' + song);
+
+                    $('#playlist li').removeClass('active');
+                    element.addClass('active');
+                };
+
+
+
+        //fin finction
+        });
+    </script>
+
+  </body>
+</html>

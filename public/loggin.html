@@ -1,0 +1,56 @@
+<html>
+<head>
+  <title>Log In</title>
+  <link rel="stylesheet" type="text/css" href="./stylesheets/style.css">
+  <script src="http://code.jquery.com/jquery-latest.min.js"></script>
+  <script src="/socket.io/socket.io.js"></script>
+</head>
+
+<body>
+
+  <form id="loggin">
+    <div class="">
+      <label>Déjà inscrit ? Connectez-vous !</label>
+      <input class="" id="logUser" />
+      <br />
+      <button type="submit">Log In</button>
+    </div>
+  </form>
+        
+  <div class="form-group">
+    <label>Non encore inscrit ? <a href="loggup.html">Inscrivez-vous</a> !</label>
+  </div>
+
+
+
+
+<script>
+  $(function(){
+
+    //connexion à sockte.io
+    var socket = io.connect();
+
+    //envoi du userName
+    $('#loggin').submit(function(e){
+        e.preventDefault();
+        var logUsername = $('#logUser').val();
+        socket.emit('logUser', logUsername);
+    });
+    //succès de la connexion
+    socket.on('connection_success', function(){
+        document.location.href="main.html";
+    });
+    //gestion des erreurs de loggin
+    socket.on('wrong_user', function(message) {
+        alert(message);
+    });
+    socket.on('user_already_connected', function(message) {
+        alert(message);
+    });
+
+    //fin fonction
+  });
+</script>
+
+</body>
+</html>

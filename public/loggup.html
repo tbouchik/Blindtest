@@ -1,0 +1,56 @@
+<html>
+<head>
+  <title>Loggup</title>
+  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/css/bootstrap.min.css">
+  <script src="http://code.jquery.com/jquery-latest.min.js"></script>
+  <script src="/socket.io/socket.io.js"></script>
+</head>
+
+<body>
+
+  <form id="loggup">
+    <div class="">
+      <label>Inscrivez-vous !</label>
+      <input class="" id="newUsername" />
+      <br />
+      <button type="submit">Log Up</button>
+    </div>
+  </form>
+
+
+
+
+<script>
+  $(function(){
+    //début fonction
+
+    //connexion à sockte.io
+    var socket = io.connect();
+
+    //envoi du userName
+    $('#loggup').submit(function(){
+      var newUsername = $('#newUsername').val();
+      socket.emit('createUsername', newUsername);
+      socket.on('usernameCreated', function (message, username) {
+      	alert(message+username);
+      	RedirectionJavascript('./loggin.html');
+      });
+    });
+
+    //récéption de la réponse à l'envoi du username
+
+    socket.on('username_already_used', function(message) {
+		alert(message);
+    });
+
+
+    //redirection
+    function RedirectionJavascript(maPage){
+        document.location.href=maPage;
+    };
+    //fin fonction
+  });
+</script>
+
+</body>
+</html>

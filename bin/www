@@ -1,0 +1,261 @@
+#!/usr/bin/env node
+
+/**
+ * Module dependencies.
+ */
+
+var app = require('../app');
+var debug = require('debug')('application:server');
+var http = require('http');
+var mysql = require('mysql');
+
+
+/**
+ * Get port from environment and store in Express.
+ */
+
+var port = normalizePort(process.env.PORT || '3000');
+app.set('port', port);
+
+/**
+ * Create HTTP server.
+ */
+
+var server = http.createServer(app);
+var io = require('socket.io').listen(server);
+console.log('server running');
+
+/**
+ * Listen on provided port, on all network interfaces.
+ */
+
+server.listen(port);
+server.on('error', onError);
+server.on('listening', onListening);
+
+/**
+ * Normalize a port into a number, string, or false.
+ */
+
+function normalizePort(val) {
+  var port = parseInt(val, 10);
+
+  if (isNaN(port)) {
+    // named pipe
+    return val;
+  }
+
+  if (port >= 0) {
+    // port number
+    return port;
+  }
+
+  return false;
+}
+
+/**
+ * Event listener for HTTP server "error" event.
+ */
+
+function onError(error) {
+  if (error.syscall !== 'listen') {
+    throw error;
+  }
+
+  var bind = typeof port === 'string'
+    ? 'Pipe ' + port
+    : 'Port ' + port;
+
+  // handle specific listen errors with friendly messages
+  switch (error.code) {
+    case 'EACCES':
+      console.error(bind + ' requires elevated privileges');
+      process.exit(1);
+      break;
+    case 'EADDRINUSE':
+      console.error(bind + ' is already in use');
+      process.exit(1);
+      break;
+    default:
+      throw error;
+  }
+}
+
+/**
+ * Event listener for HTTP server "listening" event.
+ */
+
+function onListening() {
+  var addr = server.address();
+  var bind = typeof addr === 'string'
+    ? 'pipe ' + addr
+    : 'port ' + addr.port;
+  debug('Listening on ' + bind);
+}
+
+
+
+
+/**
+ * protocole socket.io
+ */
+
+var userList=['Théo', 'moi', 'toi']; //liste des utilisateurs enregistés
+var usersConnected = [];  //liste des utilisateurs connectés
+var connections = [];  //liste des connexions
+var ready = [];
+var scores =[];
+
+
+io.sockets.on('connection',function(socket){
+
+    connections.push(socket);
+    console.log('Connected: %s sockets connected', connections.length);
+
+    //
+    //LOGGIN
+    //
+    socket.on('logUser', function(givenUsername){
+        //vérifiction du givenUsername
+        if (userList.indexOf(givenUsername)>=0 && usersConnected.indexOf(givenUsername)==-1 && usersConnected.length<2){
+            //ajout du givenUsername à usersConnected
+            console.log("utilisateur connecté : ", givenUsername);
+            socket.username = givenUsername;
+            usersConnected.push(socket.username);
+            console.log("utilisateurs connectés :  ", usersConnected);
+
+            socket.score = 0;
+            socket.ready = 0;
+            ready.push(socket.ready);
+            scores.push(socket.score);
+            console.log(ready);
+
+            //Changement de page
+            socket.emit("connectionSuccess", usersConnected);
+            //avertissement pour les autres utilisateurs
+            socket.broadcast.emit("newSystemMessage", socket.username+" s'est connecté", usersConnected);
+        }
+
+        else if (userList.indexOf(givenUsername)==-1){
+            socket.emit("wrongUser", "Le nom d'utilisateur rentré est incorrect !");
+        }
+        else if (usersConnected.indexOf(givenUsername)>=0) {
+            socket.emit("userAlreadyConnected", "Vous êtes déjà connecté !");
+        }
+        else if (usersConnected.length>=2) {
+          socket.emit("toManyUsersConnected", "Il y a déjà 2 personnes connectées");
+        }
+    });
+
+    //
+    // LOGGUP
+    //
+    socket.on('createUsername', function(newUsername){
+        if (newUsername != '' && userList.indexOf(newUsername)==-1) {
+            console.log('username créé :', newUsername);
+            userList.push(newUsername);
+            socket.emit("usernameCreated", "nom d'utiliateur enregistré : ", newUsername);
+        }
+        else if (userList.indexOf(newUsername)>=0){
+            socket.emit("usernameAlreadyUsed", "Ce nom d'utilisateur est déjà utilisé !");
+        }
+        //socket.broadcast.emit('correct_user', newUsername);
+    });
+
+    //
+    // CHAT
+    //
+    socket.on('sendMessage', function(message){
+      console.log(socket.username+" : "+message);
+      io.sockets.emit('newUserMessage', message, socket.username);
+    });
+
+    //
+    // BLIND TEST
+    //
+    socket.on('blindtestStart', function(){
+      //on prévient les autres joueurs que celui-ci est prêt
+      socket.broadcast.emit('newSystemMessage', socket.username+" est prêt à jouer !", usersConnected);
+      //choix de la première chanson
+      var min =1;
+      var max =9;
+      var num = getRandomInt( min, max); //numéro de la première chanson
+      var somme=0;
+      console.log('le num de la chanson est : ' + num);
+
+      //Vérification si tous les users ont déclenché start
+      ready[connections.indexOf(socket)] = 1 ;
+      socket.ready =1 ;
+      console.log('le tableau des ready' + ready);
+
+
+      for (var i=0 ; i<ready.length ; i++){
+        if (ready[i]==1){
+          somme += 1;
+          console.log ('la somme des ready vaut : ' + somme)
+        }
+        if(somme == ready.length ){
+          console.log('tout le monde est pret normalement');
+          io.sockets.emit('music go', num, usersConnected);
+        }
+      }
+    });
+
+    socket.on('serveur update les scores svp', function(title, artist){
+
+      //on incrémente le score du joueur
+      socket.score ++ ;
+      scores[connections.indexOf(socket)] ++;
+
+      //on actualise l'affichage des scores et on stoppe la chanson avant de passer à la suivante
+      if (socket.score == 5){
+        reinitGame();
+        console.log('le test haha' , scores);
+        socket.broadcast.emit('Vous avez perdu', scores ,socket.username);
+        socket.emit('Vous avez gagné', scores );
+        console.log('Apres reinitialisation le tableau des scores est : ');
+        console.log(scores);
+      }
+      else{
+        //on prévient les autres joueurs que celui-ci a gagné et on donne la réponse
+        socket.broadcast.emit('newSystemMessage', socket.username+" a trouvé !<br><br>C'était "+title+" de "+artist, usersConnected);
+        socket.emit('newSystemMessage', "vous avez trouvé", usersConnected);        console.log ('le tableau des scores est : ');
+        console.log(scores );
+        io.sockets.emit('stop', scores);
+      }
+    });
+
+
+    //
+    // DÉCONNEXION
+    //
+    socket.on('disconnect',function(data){
+        console.log(socket.username)
+        usersConnected.splice(usersConnected.indexOf(socket.username),1);
+        socket.broadcast.emit('newSystemMessage', socket.username+" s'est déconnecté", usersConnected);
+        connections.splice(connections.indexOf(socket),1);
+        ready.splice(connections.indexOf(socket),1);
+        scores.splice(connections.indexOf(socket),1);
+        console.log('Disconnected: %s sockets connected', connections.length);
+        console.log("liste des utilisateurs enregistrés : ", userList)
+        console.log("utilisateurs connectés : ", usersConnected);
+    });
+
+    //
+    //FONCTIONS GLOBALES
+    //
+
+    function getRandomInt(min, max){
+          min =Math.ceil(min);
+          max =Math.floor(max);
+          return Math.floor(Math.random()*(max-min)) +min;
+    };
+
+    function reinitGame(){
+      for (var i=0; i< scores.length ; i++){
+        scores[i] = 0 ;
+        connections[i].score =0 ;
+        ready[i]=0;
+      };
+    };
+});
